@@ -30,3 +30,9 @@
 *.exe
 *.out
 *.app
+
+compilador
+gramatica.h
+
+calc.tab.c
+calc.yy.c
