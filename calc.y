@@ -23,7 +23,7 @@ int yylex(void);
 %type<str> TOK_IDENT
 %type<itg> TOK_INT
 %type<flt> TOK_FLOAT
-%type<node> factor
+%type<node> factor expr stmts stmt term
 
 %start program
 
@@ -33,32 +33,63 @@ program : stmts
         ;
 
 
-stmts : stmts stmt
-      | stmt
-	  ;
+stmts : stmts[ss] stmt {
+	$ss->addChild($stmt);
+	$$ = $ss;	
+}
 
-stmt : TOK_IDENT '=' expr ';'
-     | TOK_PRINT expr ';'
-	 ;
+stmts : stmt {
+	Node *stmts = new Node();
+	stmts->addChild($stmt);
+	$$ = stmts;
+}
 
-expr : expr '+' term
-     | expr '-' term
-     | term
-	 ;
+stmt : TOK_IDENT[id] '=' expr ';' {
+	$$ = new Attr($id, $expr);
+}
 
-term : term '*' factor
-     | term '/' factor
-     | factor
-	 ;
+stmt : TOK_PRINT expr ';' {
+	$$ = new Print($expr);
+}
 
+expr : expr[ex] '+' term  {
+	$$ = new BinaryOp(
+		$ex, $term, '+');
+}
+
+expr : expr[ex] '-' term {
+	$$ = new BinaryOp(
+		$ex, $term, '-');
+}
+
+expr : term {
+	$$ = $term;
+}
+
+term : term[te] '*' factor {
+	$$ = new BinaryOp(
+		$te, $factor, '*');
+}
+
+term : term[te] '/' factor {
+	$$ = new BinaryOp(
+		$te, $factor, '/');
+}
+
+term : factor {
+	$$ = $factor;
+}
 
 factor : '(' expr ')' {
+	$$ = $expr;
 }
 
-factor : TOK_INT {
+factor : TOK_INT[itg] {
+	$$ = new Int($itg);
 }
 
-factor : TOK_FLOAT {
+factor : TOK_FLOAT[flt] {
+	$$ = new Float($flt);
 }
 
 factor : TOK_IDENT[id] {
