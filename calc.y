@@ -29,9 +29,15 @@ int yylex(void);
 
 %%
 
-program : stmts
-        ;
+program : stmts {
+	Program *p = new Program();
+	p->addChild($stmts);
 
+	// analise semântica
+	PrintTree pt;
+	pt.print(p);
+
+}
 
 stmts : stmts[ss] stmt {
 	$ss->addChild($stmt);
