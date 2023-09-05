@@ -37,6 +37,9 @@ program : stmts {
 	PrintTree pt;
 	pt.print(p);
 
+	CheckUndeclaredVar ck;
+	ck.check(p);
+
 }
 
 stmts : stmts[ss] stmt {

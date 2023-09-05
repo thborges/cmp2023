@@ -2,6 +2,7 @@
 #include <iostream>
 #include <vector>
 #include <map>
+#include <set>
 
 using namespace std;
 
@@ -51,6 +52,10 @@ public:
 		r.append("=");
 		return r;
 	}
+
+	const string getName() {
+		return ident;
+	}
 };
 
 class Print: public Node {
@@ -89,7 +94,12 @@ public:
 	Ident(string name) {
 		this->name = name;
 	}
+	
 	virtual string toStr() override {
+		return name;
+	}
+
+	const string getName() {
 		return name;
 	}
 };
@@ -139,6 +149,42 @@ public:
 		cout << "graph {\n";
 		printRecursive(n);
 		cout << "}\n";
+	}
+};
+
+
+class CheckUndeclaredVar {
+private:
+	set<string> vars;
+public:
+	void checkRecursive(Node *n) {
+		// visit left and right
+		for(Node *c : n->getChildren()) {
+			checkRecursive(c);
+		}
+
+		// visit root
+		Attr *a = dynamic_cast<Attr*>(n);
+		if (a) {
+			// visiting an Attr node, new var
+			vars.insert(a->getName());
+		} else {
+			// visiting an Ident(load) node,
+			// check if var exists
+			Ident *i = dynamic_cast<Ident*>(n);
+			if (i) {
+				if (vars.count(i->getName()) == 0) {
+					// undeclared var
+					cout << "Undeclared var " <<
+						i->getName() << endl;
+				}
+			}
+		}
+		
+	}
+
+	void check(Node *n) {
+		checkRecursive(n);
 	}
 };
 
