@@ -31,13 +31,6 @@ public:
 	}
 };
 
-class Stmt: public Node {
-public:
-	virtual string toStr() override {
-		return "stmt";
-	}
-};
-
 class Attr: public Node {
 protected:
 	string ident;
@@ -125,6 +118,33 @@ public:
 	}
 	virtual string toStr() override {
 		return to_string(value);
+	}
+};
+
+class While: public Node {
+public:
+	While(Node *logical, Node *stmts) {
+		children.push_back(logical);
+		children.push_back(stmts);
+	}
+	virtual string toStr() override {
+		return "while";
+	}
+};
+
+class Logical: public Node {
+protected:
+	char oper;
+public:
+	Logical(Node *le, char op, Node *re) {
+		children.push_back(le);
+		children.push_back(re);
+		oper = op;
+	}
+	virtual string toStr() override {
+		string r;
+		r.push_back(oper);
+		return r;
 	}
 };
 

@@ -19,11 +19,13 @@ int yylex(void);
 }
 
 %token TOK_PRINT TOK_IDENT TOK_FLOAT TOK_INT 
+%token TOK_WHILE
 
 %type<str> TOK_IDENT
 %type<itg> TOK_INT
 %type<flt> TOK_FLOAT
 %type<node> factor expr stmts stmt term
+%type<node> logical
 
 %start program
 
@@ -39,7 +41,6 @@ program : stmts {
 
 	CheckUndeclaredVar ck;
 	ck.check(p);
-
 }
 
 stmts : stmts[ss] stmt {
@@ -59,6 +60,14 @@ stmt : TOK_IDENT[id] '=' expr ';' {
 
 stmt : TOK_PRINT expr ';' {
 	$$ = new Print($expr);
+}
+
+stmt : TOK_WHILE logical '{' stmts '}' {
+	$$ = new While($logical, $stmts);
+}
+
+logical : expr[le] '>' expr[re] {
+	$$ = new Logical($le, '>', $re);
 }
 
 expr : expr[ex] '+' term  {

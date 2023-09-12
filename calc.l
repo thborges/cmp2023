@@ -17,6 +17,7 @@ D [0-9]
 [ \t\n\r]		{ /* ignora espaços */ }
 
 "print"			{ return TOK_PRINT; }
+"while"         { return TOK_WHILE; }
 "+"				{ return '+'; }
 "-"				{ return '-'; }
 "*"				{ return '*'; }
@@ -25,7 +26,9 @@ D [0-9]
 "="				{ return '='; }
 "("				{ return '('; }
 ")"				{ return ')'; }
-
+"{"				{ return '{'; }
+"}"				{ return '}'; }
+">"				{ return '>'; }
 
 {A}({A}|{D})*	{ yylval.str = strndup(yytext, yyleng);
                   return TOK_IDENT; }
