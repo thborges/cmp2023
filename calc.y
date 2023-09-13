@@ -41,6 +41,15 @@ program : stmts {
 
 	CheckUndeclaredVar ck;
 	ck.check(p);
+
+	if (errorcount > 0) {
+		printf("%d erro(s) encontrado(s).\n",
+			errorcount);
+		exit(errorcount);
+	} else {
+		CodeGen cg;
+		cg.generate(p);
+	}
 }
 
 stmts : stmts[ss] stmt {
@@ -120,6 +129,7 @@ extern int yylineno;
 
 int yyerror(const char *s) {
 	printf("erro na linha %d: %s\n", yylineno, s);
+	errorcount++;
 	return 1;
 }
 

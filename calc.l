@@ -41,6 +41,7 @@ D [0-9]
 
 . { 
 	printf("Erro: caracter inválido %c\n", yytext[0]); 
+	errorcount++;
   }
 
 %%

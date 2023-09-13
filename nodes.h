@@ -4,6 +4,11 @@
 #include <map>
 #include <set>
 
+int errorcount = 0;
+
+// symbol table
+map<string, Value*> symbols;
+
 using namespace std;
 
 class Node {
@@ -21,6 +26,13 @@ public:
 
 	virtual string toStr() {
 		return "node";
+	}
+
+	virtual Value* codegen() {
+		for(Node *n : children) {
+			n->codegen();
+		}
+		return NULL;
 	}
 };
 
@@ -49,6 +61,22 @@ public:
 	const string getName() {
 		return ident;
 	}
+
+	virtual Value* codegen() {
+		Value *exprv = children[0].codegen();
+
+		Value *address = NULL;
+		if (symbols.count(ident) == 0) {
+			address = backend.CreateAlloca(
+				exprv->getType(), 0, NULL,
+				ident);
+			symbols[ident] = address;
+		} else {
+			address = symbols[ident];
+		}
+
+		return backend.CreateStore(exprv, address);
+	}
 };
 
 class Print: public Node {
@@ -59,6 +87,13 @@ public:
 
 	virtual string toStr() override {
 		return "print";
+	}
+
+	virtual Value* codegen() {
+		Value *exprv = children[0].codegen();
+		vector<Value*> args;
+		args.push_back(exprv);
+		return backend.CreateCall(printfloat, args);
 	}
 };
 
@@ -77,6 +112,19 @@ public:
 		string r;
 		r.push_back(op);
 		return r;
+	}
+
+	virtual Value* codegen() {
+		Value *lv = children[0]->codegen();
+		Value *rv = children[1]->codegen();
+		switch (op) {
+			case '+': return backend.CreateFAdd(lv, rv);
+			case '-': return backend.CreateFSub(lv, rv);
+			case '*': return backend.CreateFMul(lv, rv);
+			case '/': return backend.CreateFDiv(lv, rv);
+
+			default: cerr << "Fail! Operador não implementado: " << op << endl;
+		}
 	}
 };
 
@@ -197,6 +245,7 @@ public:
 					// undeclared var
 					cout << "Undeclared var " <<
 						i->getName() << endl;
+					errorcount++;
 				}
 			}
 		}
@@ -205,6 +254,14 @@ public:
 
 	void check(Node *n) {
 		checkRecursive(n);
+	}
+};
+
+
+class CodeGen {
+public:
+	void generate(Node *p) {
+		p->codegen();
 	}
 };
 
