@@ -143,6 +143,13 @@ public:
 	const string getName() {
 		return name;
 	}
+
+	virtual Value* codegen() {
+		Value *symbol = symbols[name];
+		AllocaInst* ai = dyn_cast<AllocaInst>(symbol);
+		Type *st = ai->getAllocatedType();
+		return backend.CreateLoad(st, symbol, name);
+	}
 };
 
 class Float: public Node {
@@ -154,6 +161,9 @@ public:
 	}
 	virtual string toStr() override {
 		return to_string(value);
+	}
+	virtual Value* codegen() {
+		return ConstantFP::get(ctx, APFloat(value));
 	}
 };
 
@@ -167,6 +177,9 @@ public:
 	virtual string toStr() override {
 		return to_string(value);
 	}
+	virtual Value* codegen() {
+		return ConstantFP::get(ctx, APFloat((double)value));
+	}
 };
 
 class While: public Node {
@@ -175,9 +188,30 @@ public:
 		children.push_back(logical);
 		children.push_back(stmts);
 	}
+
 	virtual string toStr() override {
 		return "while";
 	}
+
+	virtual Value* codegen() {
+		BasicBlock *condition = BasicBlock::Create(ctx, "cond", current_func);
+		BasicBlock *body = BasicBlock::Create(ctx, "body", current_func);
+		BasicBlock *contin = BasicBlock::Create(ctx, "contin", current_func);
+
+		// setup entry block, goto condition
+		backend.CreateBr(condition);
+
+		// setup condition block
+		backend.SetInsertPoint(condition);
+		children[0]->codegen();
+
+		// setup body block
+		backend.SetInsertPoint(body);
+		children[1]->codegen();
+
+
+	}
+
 };
 
 class Logical: public Node {
@@ -193,6 +227,14 @@ public:
 		string r;
 		r.push_back(oper);
 		return r;
+	}
+	virtual Value* codegen() {
+		Value *lv = children[0]->codegen();
+		Value *rv = children[1]->codegen();
+		switch (op) {
+			case '>': return backend.CreateFCmpOGT(lv, rv);
+			default: cerr << "Fail! Operador não implementado: " << op << endl;
+		}
 	}
 };
 
