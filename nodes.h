@@ -203,13 +203,16 @@ public:
 
 		// setup condition block
 		backend.SetInsertPoint(condition);
-		children[0]->codegen();
+		Value *expr = children[0]->codegen();
+		backend.CreateCondBr(expr, body, contin);
 
 		// setup body block
 		backend.SetInsertPoint(body);
 		children[1]->codegen();
+		backend.CreateBr(condition);
 
-
+		backend.SetInsertPoint(contin);
+		return contin;
 	}
 
 };
