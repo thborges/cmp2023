@@ -4,12 +4,14 @@
 #include <map>
 #include <set>
 
+#include "backllvm.h"
+
+using namespace std;
+
 int errorcount = 0;
 
 // symbol table
 map<string, Value*> symbols;
-
-using namespace std;
 
 class Node {
 protected:
@@ -62,8 +64,8 @@ public:
 		return ident;
 	}
 
-	virtual Value* codegen() {
-		Value *exprv = children[0].codegen();
+	virtual Value* codegen() override {
+		Value *exprv = children[0]->codegen();
 
 		Value *address = NULL;
 		if (symbols.count(ident) == 0) {
@@ -89,8 +91,8 @@ public:
 		return "print";
 	}
 
-	virtual Value* codegen() {
-		Value *exprv = children[0].codegen();
+	virtual Value* codegen() override {
+		Value *exprv = children[0]->codegen();
 		vector<Value*> args;
 		args.push_back(exprv);
 		return backend.CreateCall(printfloat, args);
@@ -114,7 +116,7 @@ public:
 		return r;
 	}
 
-	virtual Value* codegen() {
+	virtual Value* codegen() override {
 		Value *lv = children[0]->codegen();
 		Value *rv = children[1]->codegen();
 		switch (op) {
@@ -125,6 +127,7 @@ public:
 
 			default: cerr << "Fail! Operador não implementado: " << op << endl;
 		}
+		return NULL;
 	}
 };
 
@@ -144,7 +147,7 @@ public:
 		return name;
 	}
 
-	virtual Value* codegen() {
+	virtual Value* codegen() override {
 		Value *symbol = symbols[name];
 		AllocaInst* ai = dyn_cast<AllocaInst>(symbol);
 		Type *st = ai->getAllocatedType();
@@ -162,7 +165,7 @@ public:
 	virtual string toStr() override {
 		return to_string(value);
 	}
-	virtual Value* codegen() {
+	virtual Value* codegen() override {
 		return ConstantFP::get(ctx, APFloat(value));
 	}
 };
@@ -177,7 +180,7 @@ public:
 	virtual string toStr() override {
 		return to_string(value);
 	}
-	virtual Value* codegen() {
+	virtual Value* codegen() override {
 		return ConstantFP::get(ctx, APFloat((double)value));
 	}
 };
@@ -193,7 +196,7 @@ public:
 		return "while";
 	}
 
-	virtual Value* codegen() {
+	virtual Value* codegen() override {
 		BasicBlock *condition = BasicBlock::Create(ctx, "cond", current_func);
 		BasicBlock *body = BasicBlock::Create(ctx, "body", current_func);
 		BasicBlock *contin = BasicBlock::Create(ctx, "contin", current_func);
@@ -231,13 +234,14 @@ public:
 		r.push_back(oper);
 		return r;
 	}
-	virtual Value* codegen() {
+	virtual Value* codegen() override {
 		Value *lv = children[0]->codegen();
 		Value *rv = children[1]->codegen();
-		switch (op) {
+		switch (oper) {
 			case '>': return backend.CreateFCmpOGT(lv, rv);
-			default: cerr << "Fail! Operador não implementado: " << op << endl;
+			default: cerr << "Fail! Operador não implementado: " << oper << endl;
 		}
+		return NULL;
 	}
 };
 
@@ -306,7 +310,15 @@ public:
 class CodeGen {
 public:
 	void generate(Node *p) {
+		setup_llvm();
 		p->codegen();
+
+		// terminate main function
+		Value *retv = ConstantInt::get(ctx, APInt(16, 0));
+		backend.CreateRet(retv);
+
+		module->print(outs(), nullptr);
+		print_llvm_ir();
 	}
 };
 

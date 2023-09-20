@@ -23,7 +23,7 @@
 using namespace llvm;
 
 LLVMContext ctx;
-static IRBuilder<> builder(ctx);
+static IRBuilder<> backend(ctx);
 
 Module *module;
 BasicBlock *main_stmts;
@@ -122,7 +122,7 @@ void setup_llvm() {
 	main_stmts = BasicBlock::Create(ctx, "entry", main_func);
 	current_func = main_func;
 
-	builder.SetInsertPoint(main_stmts);
+	backend.SetInsertPoint(main_stmts);
 
 	// declare auxiliary functions from stdc.c
 	create_printfloat();

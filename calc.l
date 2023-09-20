@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+extern int errorcount;
 class Node;
 #include "gramatica.h"
 
